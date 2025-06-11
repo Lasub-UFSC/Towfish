@@ -99,8 +99,8 @@ void setup() {
   // dht.begin();
   // IMU
   Wire.setClock(400000);
-  Wire.begin();
-  // Wire.begin(I2C_SDA,I2C_SCL);
+  // Wire.begin();
+  Wire.begin(I2C_SDA,I2C_SCL);
   delay(250);
   Wire.beginTransmission(0x68);
   Wire.write(0x6B);
@@ -128,6 +128,7 @@ void setup() {
 
 
 void loop() {
+  delay(1000);
   gyro_signals();
   inputRegisters[0]= (uint16_t)RateRoll;
   inputRegisters[1]= (uint16_t)RatePitch;
