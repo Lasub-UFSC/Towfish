@@ -117,13 +117,13 @@ void setup() {
   RateCalibrationPitch/=2000;   // -> tem problema dividir por 2048? Ai da pra fazer manipulação bit a bit aqui tbm
   RateCalibrationYaw/=2000;     //
 
-  modbus.configureCoils(coils, numCoils);
-  modbus.configureDiscreteInputs(discreteInputs, numDiscreteInputs);
-  modbus.configureHoldingRegisters(holdingRegisters, numHoldingRegisters);
-  modbus.configureInputRegisters(inputRegisters, numInputRegisters);
+  // modbus.configureCoils(coils, numCoils);
+  // modbus.configureDiscreteInputs(discreteInputs, numDiscreteInputs);
+  // modbus.configureHoldingRegisters(holdingRegisters, numHoldingRegisters);
+  // modbus.configureInputRegisters(inputRegisters, numInputRegisters);
 
-  MODBUS_SERIAL.begin(MODBUS_BAUD, MODBUS_CONFIG,RXD2,TXD2);
-  modbus.begin(MODBUS_UNIT_ID, MODBUS_BAUD, MODBUS_CONFIG);
+  // MODBUS_SERIAL.begin(MODBUS_BAUD, MODBUS_CONFIG,RXD2,TXD2);
+  // modbus.begin(MODBUS_UNIT_ID, MODBUS_BAUD, MODBUS_CONFIG);
 }
 
 
@@ -167,5 +167,5 @@ void loop() {
   // //   lastCommunicationTime = millis();
   // // }
 
-  modbus.poll();
+  // modbus.poll();
 }

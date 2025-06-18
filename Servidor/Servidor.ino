@@ -1,12 +1,6 @@
 #include <Wire.h>
 #include <SoftwareSerial.h>
-#include <avr/wdt.h>
-#include "DHT.h"
-
-
-#define DHTPIN 7
-#define DHTTYPE DHT11      
-DHT dht(DHTPIN, DHTTYPE);
+#include <ModbusRTUSlave.h>
 
 #define pressure_sensor A3
 
@@ -20,6 +14,26 @@ float KalmanAngleRoll = 0, KalmanUncertaintyAngleRoll = 4;
 float KalmanAnglePitch = 0, KalmanUncertaintyAnglePitch = 4;
 float Kalman1DOutput[] = { 0, 0 };
 
+const int8_t rxPin = 2;
+const int8_t txPin = 3;
+SoftwareSerial mySerial(rxPin, txPin);
+#define MODBUS_SERIAL mySerial
+#define MODBUS_BAUD 38400
+#define MODBUS_CONFIG SERIAL_8N1
+#define MODBUS_UNIT_ID 1
+const int8_t dePin = 4;
+
+ModbusRTUSlave modbus(MODBUS_SERIAL, dePin);
+
+const uint8_t numCoils = 0;
+const uint8_t numDiscreteInputs = 0;
+const uint8_t numHoldingRegisters = 0;
+const uint8_t numInputRegisters = 9;
+
+bool coils[numCoils];
+bool discreteInputs[numDiscreteInputs];
+int16_t holdingRegisters[numHoldingRegisters];
+int16_t inputRegisters[numInputRegisters];
 
 const float KalmanGain = 0.000256; // 0.004 * 0.004 * 4 * 4
 
@@ -73,158 +87,10 @@ void gyro_signals(void) {
   AnglePitch=-atan(AccX/sqrt(AccY*AccY+AccZ*AccZ))*1/(0.01746);
 }
 
-class RS485 : public SoftwareSerial {
-private:
-  int dePin;
-  char header;
-  String receivedMessage;
-  String lastSentMessage;
-  const unsigned long timeout = 1000;
-  unsigned long timer = 0;
-
-public:
-  RS485(char defaultHeader = 'I')
-    : SoftwareSerial(2, 3), dePin(4), header(defaultHeader), receivedMessage(""), lastSentMessage("") {
-    ////////////////////////////////////////////////
-    //
-    // Construtor da classe RS485
-    //
-    // params:
-    // defaultHeader : char  Cabeçalho padrão das mensagens
-    //
-    pinMode(dePin, OUTPUT);
-    digitalWrite(dePin, LOW);
-    begin(57600);
-  }
-
-  void setHeader(char newHeader) {
-    ////////////////////////////////////////////////
-    //
-    // Define um novo cabeçalho para as mensagens
-    //
-    // params:
-    // newHeader : char  Novo cabeçalho a ser utilizado
-    //
-    header = newHeader;
-  }
-
-  bool sendMessage(const String &message) {
-    ////////////////////////////////////////////////
-    //
-    // Envia uma mensagem via RS485
-    //
-    // params:
-    // message : String  Mensagem a ser enviada
-    //
-    // return  : bool  Retorna verdadeiro se a confirmação ACK for recebida
-    //
-    lastSentMessage = message;
-    digitalWrite(dePin, HIGH);
-    write(header);
-    write(message.c_str(), message.length());
-    write('\n');
-    flush();
-    digitalWrite(dePin, LOW);
-    return receiveACK();
-  }
-
-  String receiveMessage() {
-    ////////////////////////////////////////////////
-    //
-    // Recebe uma mensagem via RS485
-    //
-    // return  : String  Retorna a mensagem recebida ou uma string vazia se nenhuma mensagem for válida
-    //
-    if (available()) {
-      char receivedHeader = read();
-      if (receivedHeader == header) {
-        receivedMessage = "";
-        while (available()) {
-          char c = read();
-          if (c == '\n') break;
-          receivedMessage += c;
-        }
-        unsigned long dummy = sendAck();
-        return receivedMessage;
-      }
-    }
-    return "";
-  }
-
-  String getLastMessage() {
-    ////////////////////////////////////////////////
-    //
-    // Retorna a última mensagem recebida
-    //
-    // return  : String  Última mensagem recebida
-    //
-    return receivedMessage;
-  }
-
-  bool confirmTransmission() {
-    ////////////////////////////////////////////////
-    //
-    // Confirma se há transmissão disponível
-    //
-    // return  : bool  Retorna verdadeiro se houver dados disponíveis
-    //
-    delay(10);
-    return available();
-  }
-
-  unsigned long getTimer() {
-    ////////////////////////////////////////////////
-    //
-    // Obtém o tempo atual em milissegundos
-    //
-    // return  : unsigned long  Tempo atual em milissegundos
-    //
-    timer = millis();
-    return timer;
-  }
-
-private:
-  unsigned long sendAck() {
-    ////////////////////////////////////////////////
-    //
-    // Envia uma mensagem de confirmação "ACK"
-    //
-    // return  : unsigned long  Tempo de envio do ACK
-    //
-    digitalWrite(dePin, HIGH);
-    write("ACK\n");
-    flush();
-    digitalWrite(dePin, LOW);
-    return millis();
-  }
-
-    bool receiveACK() {
-        unsigned long startTime = millis();
-        while (millis() - startTime < timeout) {
-            if (available()) {
-                String confirmation = readStringUntil('\n');
-                if (confirmation == "ACK") {
-                    Serial.println("Confirmação ACK recebida.");
-                    return true;
-                } else {
-                    Serial.println("Erro: Confirmação incorreta.");
-                    return false;
-                }
-            }
-        }
-        Serial.println("Erro: Tempo limite excedido. Confirmação não recebida.");
-        return false;
-    }
-};
-
-RS485 rs485;
-bool handshakeCompleted = false;
-
 void setup() {
   Serial.begin(115200);
   Serial.println("RS485 Slave started.");
   
-  dht.begin();  
   // IMU
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
@@ -245,68 +111,40 @@ void setup() {
   RateCalibrationRoll/=2000;    //
   RateCalibrationPitch/=2000;   // -> tem problema dividir por 2048? Ai da pra fazer manipulação bit a bit aqui tbm
   RateCalibrationYaw/=2000;     //
-  LoopTimer=micros();
-  while (!handshakeCompleted) {
-    String msg = rs485.receiveMessage();
-    if (msg == "HANDSHAKE" || msg == "IHANDSHAKE") {
-      Serial.println("Handshake recebido.");
-      handshakeCompleted = true;
-      Serial.println("Handshake concluído. Iniciando operações normais.");
-    } else {
-      Serial.println("Aguardando handshake...");
-      delay(1000);
-    }
-  }
+  Serial.println("Modbus config...");
+
+  modbus.configureCoils(coils, numCoils);
+  modbus.configureDiscreteInputs(discreteInputs, numDiscreteInputs);
+  modbus.configureHoldingRegisters(holdingRegisters, numHoldingRegisters);
+  modbus.configureInputRegisters(inputRegisters, numInputRegisters);
+
+  MODBUS_SERIAL.begin(MODBUS_BAUD);
+  modbus.begin(MODBUS_UNIT_ID, MODBUS_BAUD, MODBUS_CONFIG);
+  Serial.println("Setup finished");
 }
 
 
 void loop() {
-  ////////////////////////////////
-  //
-  // HANDSHAKE
-  //
-  unsigned long lastCommunicationTime = millis();
-  while (millis() - lastCommunicationTime <= 5000) {
-    String msg = rs485.receiveMessage();
-    if (msg != "") {
-      Serial.print("Mensagem recebida do Master: ");
-      Serial.println(msg);
-      lastCommunicationTime = millis();
-      if (msg == "HANDSHAKE" || msg == "IHANDSHAKE") {
-        Serial.println("Erro de sincronização.");
-        //rs485.sendMessage("Erro de sincronizacao.");
-      }
-    }
-
     gyro_signals();
     String RateGyro = "RateRoll: " + (String)RateRoll + " RatePitch: " + (String)RatePitch + " RateYaw: " + (String)RateYaw;
     Serial.println(RateGyro);
-    if(rs485.sendMessage(RateGyro)){
-      lastCommunicationTime = millis();
-    }
+    inputRegisters[0]= 30000+100*RateRoll;
+    Serial.println(inputRegisters[0]);
+    inputRegisters[1]= 30000+100*RatePitch;
+    inputRegisters[2]= 30000+100*RateYaw;
+
     
     String AccGyro = "AccX: " + (String)AccX + " AccY: " + (String)AccY + " AccZ: " + (String)AccZ; 
-    if(rs485.sendMessage(AccGyro)){
-      lastCommunicationTime = millis();
-    }
+    inputRegisters[3]= 30000+100*AccX;
+    inputRegisters[4]= 30000+100*AccY;
+    inputRegisters[5]= 30000+100*AccZ;
 
     String Roll_Pitch = "AngleRoll: " + (String)AngleRoll + " AnglePitch: " + (String)AnglePitch; 
-    if(rs485.sendMessage(Roll_Pitch)){
-      lastCommunicationTime = millis();
-    }
-
-    int h = dht.readHumidity();
-    String Humidity = "Humidity: " + (String) h;
-    if(rs485.sendMessage(Humidity)){
-      lastCommunicationTime = millis();
-    }
+    inputRegisters[6]= 30000+100*AngleRoll;
+    inputRegisters[7]= 30000+100*AnglePitch;
 
     float p = analogRead(pressure_sensor);
     String pressure = "Pressure: " + (String)p;
-    if(rs485.sendMessage(pressure)){
-      lastCommunicationTime = millis();
-    }
-  }
-  Serial.println("Timeout de recepção. Reiniciando handshake.");
-  handshakeCompleted = false;
+    inputRegisters[8]= 30000+100*p;
+    modbus.poll();
 }
