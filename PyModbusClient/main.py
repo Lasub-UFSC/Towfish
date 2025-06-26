@@ -83,19 +83,31 @@ client = ModbusSerialClient(
     baudrate=38400,
     timeout=1
 )
+import struct
 
 times=[]
 if client.connect():
     print(client.connected)
     lastTime = time.time()
-    while(True):
-        result = client.read_input_registers(address=0x00, count=9, slave=1)
-        print(result.registers)
-        client.close()
-        currentTime = time.time()
-        times.append(currentTime-lastTime)
-        # print(currentTime-lastTime*1000)
-        lastTime=currentTime
-        time.sleep(1)
+    # while(True):
+    for i in range(1000):
+        # time.sleep(0.05)
+        try:
+            result = client.read_input_registers(address=0x00, count=14, slave=1)
+            print(result.registers)
+            
+            currentTime = time.time()
+            times.append(currentTime-lastTime)
+            lastTime=currentTime
+        # byte_data = struct.pack('<HH', result.registers[0], result.registers[1])
+
+        # # Unpack the 4-byte sequence as a float
+        # reconstructed_float = struct.unpack('<I', byte_data)[0]
+
+        # print(f"Reconstructed float: {reconstructed_float}")
+        except:
+            print("error at", str(i), "request")
+            break
+    client.close()
     print("Mean:", statistics.mean(times)*1000,"ms")
     print("Per Secons:", 1/statistics.mean(times))
