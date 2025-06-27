@@ -90,7 +90,7 @@ if client.connect():
     print(client.connected)
     lastTime = time.time()
     # while(True):
-    for i in range(1000):
+    for i in range(5000):
         # time.sleep(0.05)
         try:
             result = client.read_input_registers(address=0x00, count=14, slave=1)
