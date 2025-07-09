@@ -40,7 +40,7 @@ void loop() {
     modbus.update_input_register(Modbus::AccX, a.acceleration.x);
     modbus.update_input_register(Modbus::AccY, a.acceleration.y);
     modbus.update_input_register(Modbus::AccZ, a.acceleration.z);
-    modbus.update_input_register(Modbus::GyroX, g.gyro.x);
+    modbus.update_input_register(Modbus::GyroX, g.gyro.x);  
     modbus.update_input_register(Modbus::GyroY, g.gyro.y);
     modbus.update_input_register(Modbus::GyroZ, g.gyro.z);
   }
