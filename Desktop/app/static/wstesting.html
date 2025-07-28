@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Messages</h1>
+        <button onclick="clearMessage()">Clear messages</button>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = new WebSocket(`ws://localhost:8000/ws`);
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.insertBefore(message,messages.firstChild)
+            };
+            function clearMessage() {
+                var messages = document.getElementById('messages')
+                messages.innerText =''
+            }
+        </script>
+    </body>
+</html>

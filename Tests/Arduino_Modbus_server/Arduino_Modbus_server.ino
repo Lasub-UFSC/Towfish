@@ -30,6 +30,7 @@ uint16_t inputRegisters[numInputRegisters];
 #define I2C_SDA 33
 #define I2C_SCL 32
 
+bool imu_error=false;
 // float RateRoll, RatePitch, RateYaw;
 // float AccX, AccY, AccZ;
 // float AngleRoll, AnglePitch;
@@ -116,21 +117,30 @@ void update_input_register(ModbusRegister var, unsigned long value){
   inputRegisters[var+1] = ((uint16_t)valueBytes[3] << 8) | valueBytes[2];
 }
 
+void start_mpu(){
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    imu_error = true;
+    update_input_register(AccX, (float)-10);
+    update_input_register(AccY, (float)-10);
+    update_input_register(AccZ, (float)-10);
+    update_input_register(GyroX, (float)-10);
+    update_input_register(GyroY, (float)-10);
+    update_input_register(GyroZ, (float)-10);
+  } else{
+    Serial.println("MPU6050 Found!");
+  }
+}
+
 void setup() {
   Serial.begin(115200);
-  Serial.println("ESP32 Server Started.");
+  Serial.println("Arduino Server Started.");
 
   // IMU
   Wire.setClock(400000);
   Wire.begin();
     // Try to initialize!
-  if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
-    while (1) {
-      delay(10);
-    }
-  }
-  Serial.println("MPU6050 Found!");
+  start_mpu();
     //setupt motion detection
   mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
   mpu.setMotionDetectionThreshold(1);
@@ -165,8 +175,9 @@ void setup() {
 
 
 void loop() {
-  update_input_register(Timestamp, millis());
-  // if(mpu.getMotionInterruptStatus()) {
+  update_input_register(Timestamp,millis());
+  if(!imu_error){
+    if(mpu.getMotionInterruptStatus()) {
     /* Get new sensor events with the readings */
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
@@ -175,7 +186,25 @@ void loop() {
     update_input_register(AccZ, a.acceleration.z);
     update_input_register(GyroX, g.gyro.x);
     update_input_register(GyroY, g.gyro.y);
-    update_input_register(GyroZ, g.gyro.z);
-  // }
+    update_input_register(GyroZ, g.gyro.z); 
+  }
+  }else{
+    start_mpu();
+  }
   modbus.poll();
 }
+
+  // update_input_register(Timestamp,(unsigned long ) 100000);
+  // if(mpu.getMotionInterruptStatus()) {
+  //   /* Get new sensor events with the readings */
+  //   sensors_event_t a, g, temp;
+  //   mpu.getEvent(&a, &g, &temp);
+  //   update_input_register(AccX, (float) 0.0);
+  //   update_input_register(AccY, (float)-10.0);
+  //   update_input_register(AccZ, (float)10.0);
+  //   update_input_register(GyroX, (float)100.0);
+  //   update_input_register(GyroY, (float)10000.0);
+  //   update_input_register(GyroZ, (float)-10000.0);
+    
+  // }
+  // modbus.poll();

@@ -74,37 +74,61 @@
 #         run_async_simple_client("dev/port0",FramerType.RTU), debug=True
 #     )
 
+
 from pymodbus.client.serial import ModbusSerialClient
 import time
 import statistics
+import struct
+
+
+def convertData(data):
+        convertedData= {}
+
+        byte_data = struct.pack('<HH', data[0], data[1])
+        convertedData["timestamp"] = struct.unpack('<I', byte_data)[0]
+
+        byte_data = struct.pack('<HH', data[2], data[3])
+        convertedData["accx"] = struct.unpack('<f', byte_data)[0]
+
+        byte_data = struct.pack('<HH', data[4], data[5])
+        convertedData["accy"] = struct.unpack('<f', byte_data)[0]
+
+        byte_data = struct.pack('<HH', data[6], data[7])
+        convertedData["accz"] = struct.unpack('<f', byte_data)[0]
+
+        byte_data = struct.pack('<HH', data[8], data[9])
+        convertedData["gyrox"] = struct.unpack('<f', byte_data)[0]
+
+
+        byte_data = struct.pack('<HH', data[10], data[11])
+        convertedData["gyroy"] = struct.unpack('<f', byte_data)[0]
+
+
+        byte_data = struct.pack('<HH', data[12], data[13])
+        convertedData["gyroz"] = struct.unpack('<f', byte_data)[0]
+
+        return convertedData
 
 client = ModbusSerialClient(
-    port='COM11',  # or COM port on Windows
+    port='COM5',  # or COM port on Windows
     baudrate=38400,
     timeout=1
 )
-import struct
 
 times=[]
 if client.connect():
     print(client.connected)
     lastTime = time.time()
-    # while(True):
-    for i in range(5000):
-        # time.sleep(0.05)
+    for i in range(100):
+        time.sleep(0.05)
         try:
             result = client.read_input_registers(address=0x00, count=14, slave=1)
-            print(result.registers)
+            print(convertData(result.registers))
             
             currentTime = time.time()
             times.append(currentTime-lastTime)
             lastTime=currentTime
-        # byte_data = struct.pack('<HH', result.registers[0], result.registers[1])
-
-        # # Unpack the 4-byte sequence as a float
-        # reconstructed_float = struct.unpack('<I', byte_data)[0]
-
-        # print(f"Reconstructed float: {reconstructed_float}")
+        
         except:
             print("error at", str(i), "request")
             break
