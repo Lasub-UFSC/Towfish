@@ -9,7 +9,7 @@ import asyncio
 import struct
 
 class PollingClient:
-    def __init__(self,onNewData,verbose=False,port="COM5"):
+    def __init__(self,onNewData, setFrequency=45,verbose=False,port="COM5"):
         print("Constructor")
         self.modbusClient = ModbusSerialClient(
             port=port,
@@ -22,6 +22,7 @@ class PollingClient:
         self.t=None
         self.stop_polling = threading.Event()
         self.onNewData = onNewData
+        self.setFrequency = setFrequency
 
     def __del__(self):
        self.stop()
@@ -48,11 +49,14 @@ class PollingClient:
                     print("trying to connect...")
                     time.sleep(1)
                 else:
+                    init=time.time()
                     data = self.readData()
                     if data ==None: continue
                     spamwriter.writerow(data)
+                    if(self.verbose):print("On New Data")
                     asyncio.run(self.onNewData(self.convertData(data)))
-                    time.sleep(1)
+                    time.sleep(max((1/self.setFrequency)-(time.time()-init),0))
+                    if(self.verbose):print(1/(time.time()-init))
         print("Stopping Thread")
                 
     def convertData(self,data):
@@ -86,9 +90,7 @@ class PollingClient:
 
     def readData(self):
         try:
-            init=time.time()
             result = self.modbusClient.read_input_registers(address=0x00, count=14, slave=1)
-            if(self.verbose):print(time.time()-init)
             return result.registers
         except:
             print("error reading")

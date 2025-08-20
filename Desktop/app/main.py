@@ -17,8 +17,8 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
 
     async def broadcast(self, message):
-        print("Broadcasting message")
-        print(f"Connections: {self.active_connections}")
+        # print("Broadcasting message")
+        # print(f"Connections: {self.active_connections}")
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     manager = ConnectionManager()
 
     global pollingClient
-    pollingClient = PollingClient(onNewData=manager.broadcast)
+    pollingClient = PollingClient(onNewData=manager.broadcast,verbose=True)
     pollingClient.start()
     yield
     if pollingClient:
