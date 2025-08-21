@@ -72,13 +72,15 @@ function init() {
       // Set the model's position to the scene's center
       model.position.set(0, 0, 0);
 
-      model.scale.set(0.01, 0.01, 0.01);
+      model.scale.set(0.02, 0.02, 0.02);
 
       model.position.set(0, 0, -10);
 
       model.rotation.x = 90 * (Math.PI / 180);
       model.rotation.y = 0 * (Math.PI / 180);
-      model.rotation.z = 90 * (Math.PI / 180);
+      model.rotation.z = -90 * (Math.PI / 180);
+      const axesHelper = new THREE.AxesHelper( 1000 );
+      model.add(axesHelper);
       scene.add(model);
       console.log("Model loaded successfully and centered:", gltf);
     },
@@ -92,22 +94,20 @@ function init() {
 
   window.addEventListener("resize", onWindowResize, false);
 
-  //ws setup
+    // ws setup
     var ws = new WebSocket(`ws://localhost:8000/ws`);
     ws.onmessage = function(event) {
-        var messages = document.getElementById('messages')
-        var message = document.createElement('li')
-        var content = document.createTextNode(event.data)
-        message.appendChild(content)
-        messages.insertBefore(message,messages.firstChild)
+        let obj = JSON.parse(event.data)
+        console.log(obj)
+        updateModel(obj["Pitch"],obj["Roll"],0)
     };
 }
 
 function updateModel(rotationX,rotationY,rotationZ) {
   if (model) {
-    model.rotation.x = parseFloat(rotXSlider.value) * (Math.PI / 180);
-    model.rotation.y = parseFloat(rotYSlider.value) * (Math.PI / 180);
-    model.rotation.z = parseFloat(rotYSlider.value) * (Math.PI / 180);
+    model.rotation.x = parseFloat(90-rotationX) * (Math.PI / 180);
+    model.rotation.y = parseFloat(-rotationY) * (Math.PI / 180);
+    model.rotation.z = parseFloat(-90) * (Math.PI / 180);
   }
 }
 

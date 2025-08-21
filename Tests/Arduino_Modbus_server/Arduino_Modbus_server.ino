@@ -3,7 +3,6 @@
 #include <Adafruit_Sensor.h>
 #include <SoftwareSerial.h>
 #include <ModbusRTUSlave.h>
-
 // #include <avr/wdt.h>
 
 const int8_t rxPin = 2;
@@ -31,68 +30,7 @@ uint16_t inputRegisters[numInputRegisters];
 #define I2C_SCL 32
 
 bool imu_error=false;
-// float RateRoll, RatePitch, RateYaw;
-// float AccX, AccY, AccZ;
-// float AngleRoll, AnglePitch;
-// float RateCalibrationRoll, RateCalibrationPitch, RateCalibrationYaw;
-// int RateCalibrationNumber;
 Adafruit_MPU6050 mpu;
-// float KalmanAngleRoll = 0, KalmanUncertaintyAngleRoll = 4;
-// float KalmanAnglePitch = 0, KalmanUncertaintyAnglePitch = 4;
-// float Kalman1DOutput[] = { 0, 0 };
-
-
-// const float KalmanGain = 0.000256; // 0.004 * 0.004 * 4 * 4
-
-// //Versão Simplificado do Filtro de Kalmann Unidimensional
-// void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
-//   KalmanState = KalmanState + 0.004 * KalmanInput;
-
-//   KalmanUncertainty = KalmanUncertainty + KalmanGain; //Esses ganhos podem ser adaptados dependendo do fabricante
-//   float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + 9); //Esses ganhos podem ser adaptados dependendo do fabricante
-//   KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState);
-//   KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty;
-//   Kalman1DOutput[0] = KalmanState;
-//   Kalman1DOutput[1] = KalmanUncertainty;
-// }
-
-// void gyro_signals(void) {
-//   Wire.beginTransmission(0x68);
-//   Wire.write(0x1A);
-//   Wire.write(0x05);
-//   Wire.endTransmission();
-//   Wire.beginTransmission(0x68);
-//   Wire.write(0x1C);
-//   Wire.write(0x10);
-//   Wire.endTransmission();
-//   Wire.beginTransmission(0x68);
-//   Wire.write(0x3B);
-//   Wire.endTransmission();
-//   Wire.requestFrom(0x68,6);
-//   int16_t AccXLSB = Wire.read() << 8 | Wire.read();
-//   int16_t AccYLSB = Wire.read() << 8 | Wire.read();
-//   int16_t AccZLSB = Wire.read() << 8 | Wire.read();
-//   Wire.beginTransmission(0x68);
-//   Wire.write(0x1B);
-//   Wire.write(0x8);
-//   Wire.endTransmission();
-//   Wire.beginTransmission(0x68);
-//   Wire.write(0x43);
-//   Wire.endTransmission();
-//   Wire.requestFrom(0x68,6);
-//   int16_t GyroX=Wire.read()<<8 | Wire.read();
-//   int16_t GyroY=Wire.read()<<8 | Wire.read();
-//   int16_t GyroZ=Wire.read()<<8 | Wire.read();
-//   //Serial.println(GyroX);
-//   RateRoll=(float)GyroX/65.5;
-//   RatePitch=(float)GyroY/65.5;
-//   RateYaw=(float)GyroZ/65.5;
-//   AccX=(float)AccXLSB/4096-0.05;//Calibração manual -> Valores ajustados por teste    |
-//   AccY=(float)AccYLSB/4096-0.03;//Calibração manual -> Valores ajustados por teste    |-> aqui da pra fazer uma manipulacao bit a bit maluca
-//   AccZ=(float)AccZLSB/4096-0.41;//Calibração manual -> Valores ajustados por teste    |
-//   AngleRoll=atan(AccY/sqrt(AccX*AccX+AccZ*AccZ))*1/(0.01746);
-//   AnglePitch=-atan(AccX/sqrt(AccY*AccY+AccZ*AccZ))*1/(0.01746);
-// }
 
 enum ModbusRegister {
   Timestamp = 0,
@@ -127,6 +65,8 @@ void start_mpu(){
     update_input_register(GyroX, (float)-10);
     update_input_register(GyroY, (float)-10);
     update_input_register(GyroZ, (float)-10);
+
+    delay(1000);
   } else{
     Serial.println("MPU6050 Found!");
   }
@@ -139,30 +79,15 @@ void setup() {
   // IMU
   Wire.setClock(400000);
   Wire.begin();
-    // Try to initialize!
+  // Try to initialize!
   start_mpu();
-    //setupt motion detection
+  //setupt motion detection
   mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
   mpu.setMotionDetectionThreshold(1);
   mpu.setMotionDetectionDuration(20);
   mpu.setInterruptPinLatch(true);	// Keep it latched.  Will turn off when reinitialized.
   mpu.setInterruptPinPolarity(true);
   mpu.setMotionInterrupt(true);
-  // delay(250);
-  // Wire.beginTransmission(0x68);
-  // Wire.write(0x6B);
-  // Wire.write(0x00);
-  // Wire.endTransmission();
-  // for (RateCalibrationNumber=0; RateCalibrationNumber<2000; RateCalibrationNumber ++) {
-  //   gyro_signals();
-  //   RateCalibrationRoll+=RateRoll;
-  //   RateCalibrationPitch+=RatePitch;
-  //   RateCalibrationYaw+=RateYaw;
-  //   delay(1);
-  // }
-  // RateCalibrationRoll/=2000;    //
-  // RateCalibrationPitch/=2000;   // -> tem problema dividir por 2048? Ai da pra fazer manipulação bit a bit aqui tbm
-  // RateCalibrationYaw/=2000;     //
 
   modbus.configureCoils(coils, numCoils);
   modbus.configureDiscreteInputs(discreteInputs, numDiscreteInputs);
@@ -171,14 +96,17 @@ void setup() {
 
   MODBUS_SERIAL.begin(MODBUS_BAUD);
   modbus.begin(MODBUS_UNIT_ID, MODBUS_BAUD, MODBUS_CONFIG);
+
+  // wdt_enable(WDTO_2S);
 }
 
 
 void loop() {
-  update_input_register(Timestamp,millis());
-  if(!imu_error){
-    if(mpu.getMotionInterruptStatus()) {
-    /* Get new sensor events with the readings */
+  Serial.println("Updating timestamp...");
+  update_input_register(Timestamp, millis());
+
+  if (!imu_error) {
+    Serial.println("Reading IMU data...");
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
     update_input_register(AccX, a.acceleration.x);
@@ -187,24 +115,15 @@ void loop() {
     update_input_register(GyroX, g.gyro.x);
     update_input_register(GyroY, g.gyro.y);
     update_input_register(GyroZ, g.gyro.z); 
-  }
-  }else{
+    Serial.println("IMU data updated.");
+  } else {
+    Serial.println("IMU error detected. Trying to restart MPU...");
     start_mpu();
   }
-  modbus.poll();
-}
 
-  // update_input_register(Timestamp,(unsigned long ) 100000);
-  // if(mpu.getMotionInterruptStatus()) {
-  //   /* Get new sensor events with the readings */
-  //   sensors_event_t a, g, temp;
-  //   mpu.getEvent(&a, &g, &temp);
-  //   update_input_register(AccX, (float) 0.0);
-  //   update_input_register(AccY, (float)-10.0);
-  //   update_input_register(AccZ, (float)10.0);
-  //   update_input_register(GyroX, (float)100.0);
-  //   update_input_register(GyroY, (float)10000.0);
-  //   update_input_register(GyroZ, (float)-10000.0);
-    
-  // }
-  // modbus.poll();
+  Serial.println("Polling Modbus...");
+  if(modbus.poll()){
+    // wdt_reset();
+  }
+  Serial.println("Loop finished.");
+}

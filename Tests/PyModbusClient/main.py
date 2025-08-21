@@ -110,7 +110,7 @@ def convertData(data):
         return convertedData
 
 client = ModbusSerialClient(
-    port='COM5',  # or COM port on Windows
+    port='COM10',  # or COM port on Windows
     baudrate=38400,
     timeout=1
 )
