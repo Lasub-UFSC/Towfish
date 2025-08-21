@@ -2,41 +2,28 @@
 <html>
 <head>
     <title>Three.js GLTF Loader</title>
-    <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
-        #threeJsCanvas {
-            width: 100vw;
-            height: 100vh;
-        }
-        #controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
-        .control-group {
-            margin-bottom: 10px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input[type="range"] {
-            width: 150px;
-        }
-    </style>
+    
+    <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
     <canvas id="threeJsCanvas"></canvas>
-<!-- 
+
     <div id="controls">
         <div class="control-group">
+            <label>Pitch:</label>
+            <strong>0.0</strong>
+        </div>
+
+        <div class="control-group">
+            <label>Roll:</label>
+            <strong>0.0</strong>
+        </div>
+
+        <div class="control-group">
+            <label>Depth:</label>
+            <strong>0.0</strong>
+        </div>
+        <!-- <div class="control-group">
             <label>Scale:</label>
             <input type="range" id="scaleSlider" min="0" max="2" step="0.01" value="0.01">
         </div>
@@ -63,8 +50,8 @@
                 <div class="control-group">
             <label>Rotation Z:</label>
             <input type="range" id="rotZSlider" min="0" max="360" step="1" value="0">
-        </div>
-    </div> -->
+        </div> -->
+    </div>
     
     <script type="module" src="/src/main.js"></script>
 </body>
