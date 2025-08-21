@@ -3,7 +3,7 @@
 #include <Adafruit_Sensor.h>
 #include <SoftwareSerial.h>
 #include <ModbusRTUSlave.h>
-// #include <avr/wdt.h>
+#include <avr/wdt.h>
 
 const int8_t rxPin = 2;
 const int8_t txPin = 3;
@@ -97,16 +97,14 @@ void setup() {
   MODBUS_SERIAL.begin(MODBUS_BAUD);
   modbus.begin(MODBUS_UNIT_ID, MODBUS_BAUD, MODBUS_CONFIG);
 
-  // wdt_enable(WDTO_2S);
+  wdt_enable(WDTO_4S);
 }
 
 
 void loop() {
-  Serial.println("Updating timestamp...");
   update_input_register(Timestamp, millis());
 
   if (!imu_error) {
-    Serial.println("Reading IMU data...");
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
     update_input_register(AccX, a.acceleration.x);
@@ -115,15 +113,11 @@ void loop() {
     update_input_register(GyroX, g.gyro.x);
     update_input_register(GyroY, g.gyro.y);
     update_input_register(GyroZ, g.gyro.z); 
-    Serial.println("IMU data updated.");
   } else {
-    Serial.println("IMU error detected. Trying to restart MPU...");
     start_mpu();
   }
 
-  Serial.println("Polling Modbus...");
   if(modbus.poll()){
-    // wdt_reset();
+    wdt_reset();
   }
-  Serial.println("Loop finished.");
 }
