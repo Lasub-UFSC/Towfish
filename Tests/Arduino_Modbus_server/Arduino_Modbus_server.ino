@@ -18,7 +18,7 @@ ModbusRTUSlave modbus(MODBUS_SERIAL, dePin);
 const uint8_t numCoils = 0;
 const uint8_t numDiscreteInputs = 0;
 const uint8_t numHoldingRegisters = 0;
-const uint8_t numInputRegisters = 14;
+const uint8_t numInputRegisters = 15;
 
 bool coils[numCoils];
 bool discreteInputs[numDiscreteInputs];
@@ -39,7 +39,8 @@ enum ModbusRegister {
   AccZ = 6,
   GyroX = 8,
   GyroY = 10,
-  GyroZ = 12
+  GyroZ = 12,
+  Pressure = 14,
 };
 void update_input_register(ModbusRegister var, float value){
   uint8_t* floatBytes = (uint8_t*)&value;
@@ -54,6 +55,11 @@ void update_input_register(ModbusRegister var, unsigned long value){
   inputRegisters[var] = ((uint16_t)valueBytes[1] << 8) | valueBytes[0];
   inputRegisters[var+1] = ((uint16_t)valueBytes[3] << 8) | valueBytes[2];
 }
+
+void update_input_register(ModbusRegister var, int value){
+  inputRegisters[var] = value;
+}
+
 
 void start_mpu(){
   if (!mpu.begin()) {
@@ -116,6 +122,8 @@ void loop() {
   } else {
     start_mpu();
   }
+
+  update_input_register(Pressure,  analogRead(pressure_sensor)); 
 
   if(modbus.poll()){
     wdt_reset();

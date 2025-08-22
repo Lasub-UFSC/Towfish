@@ -32,27 +32,38 @@ def convertData(data):
         return convertedData
 
 
-df = pd.read_csv(r'data\2025-08-21--15.13.csv',header=None)
+df = pd.read_csv(r'data\2025-08-22--12.15.csv',header=None)
 timestamps = []
+pythonTime=[]
 for index, row in df.iterrows():
     result_array = convertData(row.values)
 
     timestamps.append(result_array["timestamp"])
-
+    pythonTime.append(row.values[-1])
 difference=[]
 
+lastTimestamp=timestamps[0]
+lastPythonTime=pythonTime[0]
+resets=0
 for i in range(1, len(timestamps)):
-    # Subtract the previous item from the current item
-    difference.append(timestamps[i] - timestamps[i - 1])
+    if(lastTimestamp>timestamps[i]):
+         resets+=1
+         print(i+1,resets, pythonTime[i]-lastPythonTime)
+    lastTimestamp=timestamps[i]
+    lastPythonTime=pythonTime[i]
+    
+# for i in range(1, len(timestamps)):
+#     # Subtract the previous item from the current item
+#     difference.append(timestamps[i] - timestamps[i - 1])
 
 
-# Plot the results
-plt.figure(figsize=(10, 6))
-plt.plot(difference, marker='o', linestyle='-')
-plt.grid(True)
-plt.show()
-plt.clf()
-plt.figure(figsize=(10, 6))
-plt.plot(timestamps, marker='o', linestyle='-')
-plt.grid(True)
-plt.show()
+# # Plot the results
+# plt.figure(figsize=(10, 6))
+# plt.plot(difference, marker='o', linestyle='-')
+# plt.grid(True)
+# plt.show()
+# plt.clf()
+# plt.figure(figsize=(10, 6))
+# plt.plot(timestamps, marker='o', linestyle='-')
+# plt.grid(True)
+# plt.show()

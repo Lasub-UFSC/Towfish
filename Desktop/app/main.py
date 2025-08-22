@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     manager = ConnectionManager()
 
     global pollingClient
-    pollingClient = PollingClient(onNewData=manager.broadcast,verbose=True)
+    pollingClient = PollingClient(onNewData=manager.broadcast,verbose=False)
     pollingClient.start()
     yield
     if pollingClient:

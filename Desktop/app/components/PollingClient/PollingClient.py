@@ -17,7 +17,8 @@ class PollingClient:
         self.modbusClient = ModbusSerialClient(
             port=port,
             baudrate=38400,
-            timeout=1
+            timeout=0.5,
+            retries=1
         )
 
         self.verbose=verbose
@@ -38,6 +39,7 @@ class PollingClient:
     def start(self):
         if self.t: return
         self.t = threading.Thread(target=self.polling)
+        print("Starting polling...")
         # self.calibrate()
         self.pitch = 0.0
         self.roll = 0.0
@@ -57,8 +59,10 @@ class PollingClient:
             while not self.stop_polling.is_set():
                 if not self.modbusClient.connected:
                     self.modbusClient.connect()
-                    print("trying to connect...")
+                    print("trying to connect... ")
                     time.sleep(1)
+                    data = self.readData()
+                    if data !=None: print("Connected. Polling again...")
                 else:
                     init=time.time()
                     data = self.readData()
@@ -96,7 +100,8 @@ class PollingClient:
 
         byte_data = struct.pack('<HH', data[12], data[13])
         convertedData["gyroz"] = struct.unpack('<f', byte_data)[0]
-        
+
+        convertedData["pressure"] = data[14]
         return convertedData
 
 
@@ -142,11 +147,11 @@ class PollingClient:
         # (Optional) Convert to degrees
         roll_deg = math.degrees(self.roll)
         pitch_deg = math.degrees(self.pitch)
-        return {"Pitch": pitch_deg, "Roll": roll_deg, "Timestamp":convertedData["timestamp"]}
+        return {"Pitch": pitch_deg, "Roll": roll_deg, "Depth":convertedData["pressure"]*100/1023}
 
     def readData(self):
         try:
-            result = self.modbusClient.read_input_registers(address=0x00, count=14, slave=1)
+            result = self.modbusClient.read_input_registers(address=0x00, count=15, slave=1)
             return result.registers
         except:
             print("error reading")
