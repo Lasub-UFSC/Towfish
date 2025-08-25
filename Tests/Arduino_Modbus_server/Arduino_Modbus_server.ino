@@ -103,7 +103,7 @@ void setup() {
   MODBUS_SERIAL.begin(MODBUS_BAUD);
   modbus.begin(MODBUS_UNIT_ID, MODBUS_BAUD, MODBUS_CONFIG);
 
-  wdt_enable(WDTO_4S);
+  wdt_enable(WDTO_2S);
 }
 
 
