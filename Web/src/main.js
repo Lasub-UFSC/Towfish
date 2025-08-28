@@ -48,7 +48,7 @@ function init() {
 
   // GLTFLoader
   const loader = new GLTFLoader();
-  const modelUrl = "/3D/towfish.gltf";
+  const modelUrl = "3D/towfish.gltf";
   
   loader.load(
     modelUrl,
