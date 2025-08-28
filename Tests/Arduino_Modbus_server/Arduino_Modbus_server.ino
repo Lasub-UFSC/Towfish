@@ -79,14 +79,19 @@ void start_mpu(){
 }
 
 void setup() {
+  wdt_enable(WDTO_1S);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
   Serial.begin(115200);
   Serial.println("Arduino Server Started.");
 
   // IMU
   Wire.setClock(400000);
   Wire.begin();
+  Serial.println("Wire setted up");
   // Try to initialize!
   start_mpu();
+
   //setupt motion detection
   mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
   mpu.setMotionDetectionThreshold(1);
@@ -94,6 +99,8 @@ void setup() {
   mpu.setInterruptPinLatch(true);	// Keep it latched.  Will turn off when reinitialized.
   mpu.setInterruptPinPolarity(true);
   mpu.setMotionInterrupt(true);
+  Serial.println("MPU setted up");
+
 
   modbus.configureCoils(coils, numCoils);
   modbus.configureDiscreteInputs(discreteInputs, numDiscreteInputs);
@@ -102,8 +109,10 @@ void setup() {
 
   MODBUS_SERIAL.begin(MODBUS_BAUD);
   modbus.begin(MODBUS_UNIT_ID, MODBUS_BAUD, MODBUS_CONFIG);
+  Serial.println("Modbus started");
 
-  wdt_enable(WDTO_2S);
+
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 
