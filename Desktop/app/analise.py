@@ -32,7 +32,7 @@ def convertData(data):
         return convertedData
 
 
-df = pd.read_csv(r'data\2025-08-22--12.15.csv',header=None)
+df = pd.read_csv(r'data\2025-09-03--11.30.csv',header=None)
 timestamps = []
 pythonTime=[]
 for index, row in df.iterrows():
@@ -48,7 +48,7 @@ resets=0
 for i in range(1, len(timestamps)):
     if(lastTimestamp>timestamps[i]):
          resets+=1
-         print(i+1,resets, pythonTime[i]-lastPythonTime)
+         print(i+1,resets, pythonTime[i]-lastPythonTime, int(pythonTime[i]))
     lastTimestamp=timestamps[i]
     lastPythonTime=pythonTime[i]
     

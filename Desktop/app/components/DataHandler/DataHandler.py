@@ -64,7 +64,7 @@ class DataHandler:
     def filterData(self,data):
         if(not self.calibrated):
             self.__calibrate(data)
-            return {"Pitch": 45, "Roll": 45, "Depth":45}
+            return {"Pitch": 45, "Roll": 45, "Depth":45, "Timestamp":data[-1]}
 
         convertedData = self.__convertData(data)
         ax, ay, az =  convertedData["accx"]/10,  convertedData["accy"]/10,  convertedData["accz"]
@@ -83,4 +83,4 @@ class DataHandler:
         # (Optional) Convert to degrees
         roll_deg = math.degrees(self.roll)
         pitch_deg = math.degrees(self.pitch)
-        return {"Pitch": pitch_deg, "Roll": roll_deg, "Depth":convertedData["pressure"]*100/1023}
+        return {"Pitch": pitch_deg, "Roll": roll_deg, "Depth":convertedData["pressure"]*100/1023, "Timestamp":data[-1]}
