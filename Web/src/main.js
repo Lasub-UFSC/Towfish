@@ -2,23 +2,25 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import Chart from 'chart.js/auto';
 
 // Declare global variables
-let scene, camera, renderer, model, Xaxis,Yaxis,Zaxis, controls;
-const pitchText =  document.getElementById("pitchText");
-const rollText =  document.getElementById("rollText");
-const depthText =  document.getElementById("depthText");
-const innerDepthBar =  document.getElementById("innerDepthBar");
+let scene, camera, renderer, model, Xaxis, Yaxis, Zaxis, controls, chart;
+const pitchText = document.getElementById("pitchText");
+const rollText = document.getElementById("rollText");
+const depthText = document.getElementById("depthText");
+const innerDepthBar = document.getElementById("innerDepthBar");
 
+let startTimestamp = 0;
 /**
- * Initializes the Three.js scene and UI controls.
+ * init3Dializes the Three.js scene and UI controls.
  */
-function init() {
+function init3D() {
   const canvas = document.getElementById("threeJsCanvas");
 
   // Scene setup
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x01013F );
+  scene.background = new THREE.Color(0x01013F);
 
   // Camera setup
   camera = new THREE.PerspectiveCamera(
@@ -36,7 +38,7 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
 
-  controls = new OrbitControls( camera, renderer.domElement );
+  controls = new OrbitControls(camera, renderer.domElement);
 
   // Lights
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -49,16 +51,16 @@ function init() {
   // GLTFLoader
   const loader = new GLTFLoader();
   const modelUrl = "3D/towfish.gltf";
-  
+
   loader.load(
     modelUrl,
     function (gltf) {
       model = gltf.scene;
-      const axesHelper = new THREE.AxesHelper( 25 );
+      const axesHelper = new THREE.AxesHelper(25);
       Xaxis = new THREE.Group();
       Yaxis = new THREE.Group();
       Zaxis = new THREE.Group();
-      
+
       // **New Code: Traverse the model and center the geometry**
       model.traverse((child) => {
         if (child.isMesh) {
@@ -104,24 +106,35 @@ function init() {
 
   window.addEventListener("resize", onWindowResize, false);
 
-    // ws setup
-    var ws = new WebSocket(`ws://localhost:8000/ws`);
-    ws.onmessage = function(event) {
-        let obj = JSON.parse(event.data)
-        updateModel(obj["Pitch"],obj["Roll"],-90,obj["Depth"])
-    };
 }
 
-function updateModel(rotationX,rotationY,rotationZ,depth) {
+function updateModel(rotationX, rotationY, rotationZ, depth) {
   if (model) {
-    Xaxis.rotation.x = parseFloat(90-rotationX) * (Math.PI / 180);
+    Xaxis.rotation.x = parseFloat(90 - rotationX) * (Math.PI / 180);
     Yaxis.rotation.y = parseFloat(-rotationY) * (Math.PI / 180);
     Zaxis.rotation.z = parseFloat(rotationZ) * (Math.PI / 180);
   }
-  pitchText.innerText=rotationX.toFixed(2);
-  rollText.innerText=rotationY.toFixed(2);
-  depthText.innerText=depth.toFixed(2);
-  innerDepthBar.style.height = depth+"%";
+  pitchText.innerText = rotationY.toFixed(2);
+  rollText.innerText = rotationX.toFixed(2);
+  depthText.innerText = depth.toFixed(2);
+  innerDepthBar.style.height = depth + "%";
+}
+
+function updateChart(pitch, timestamp) {
+  if (startTimestamp == 0) {
+    startTimestamp = timestamp;
+  }
+  // Add the new data point to the dataset
+  chart.data.labels.push((timestamp - startTimestamp).toFixed(2)); // Add new label
+  chart.data.datasets[0].data.push(pitch); // Add new data point
+
+  // Limit the number of data points to keep the chart from getting too crowded
+  const maxDataPoints = 200 ;
+  if (chart.data.datasets[0].data.length > maxDataPoints) {
+    chart.data.labels.shift(timestamp); // Add new label
+    chart.data.datasets[0].data.shift();
+  }
+  chart.update();
 }
 
 /**
@@ -142,8 +155,102 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+function initChart() {
+  const ctx = document.getElementById('myLineChart').getContext('2d');
+
+  // Sample data for the line chart
+  const initialData = {
+    labels: [],
+    datasets: [{
+      data: [],
+      fill: false,
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1
+    }]
+  };
+
+  // Configuration options for the chart
+  const config = {
+    type: 'line',
+    data: initialData,
+    options: {
+      elements: {
+        point: {
+          pointStyle: 'line' // or 'rect', 'star', etc.
+        }
+      },
+      animation: {
+        duration: 0,
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false // This line hides the legend
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+        }
+      },
+      scales: {
+        x: {
+          // Set the scale type to 'time' to handle timestamps
+          time: {
+            unit: 'second',
+            displayFormats: {
+              second: 'HH:mm:ss'
+            }
+          },
+          title: {
+            display: true,
+            text: 'Tempo (s)',
+            color: "#FFF",
+            font: {
+              family: 'Arial',
+            }
+          }
+        },
+        y: {
+          suggestedMin:-5,
+          suggestedMax:5,
+          title: {
+            display: true,
+            text: 'Pitch ( °)',
+            color: "#FFF",
+            font: {
+              family: 'Arial',
+            }
+          },
+          ticks: {
+            color: "#FFF",
+            font: {
+              family: 'Arial',
+            }
+          },
+          grid: {
+            color: "#CCCCCC",
+          }
+        }
+      }
+    }
+  };
+
+  // Create the new chart instance
+  chart = new Chart(ctx, config);
+};
+
 // Start everything when the window loads.
 window.onload = function () {
-  init();
+  init3D();
+  initChart();
+  // ws setup
+  var ws = new WebSocket(`ws://localhost:8000/ws`);
+  ws.onmessage = function (event) {
+    let obj = JSON.parse(event.data)
+    updateModel(obj["Pitch"], obj["Roll"], -90, obj["Depth"])
+    updateChart(obj["Roll"], obj["Timestamp"])
+  };
+
   animate();
 };

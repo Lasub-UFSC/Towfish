@@ -1,6 +1,11 @@
-body { margin: 0; overflow: hidden; }
+body {
+    margin: 0;
+    overflow: hidden;
+}
 
-canvas { display: block; }
+canvas {
+    display: block;
+}
 
 #threeJsCanvas {
     width: 100vw;
@@ -19,7 +24,7 @@ canvas { display: block; }
     color: white;
 }
 
-#controls{
+#controls {
     background: rgba(255, 255, 255, 0.3);
     padding: 10px;
     border-radius: 5px;
@@ -35,27 +40,38 @@ canvas { display: block; }
 
 #outerDepthBar {
     /* Base for the depth bar */
-    background:rgba(255, 255, 255, 0.25);  /* Blue gradient for depth */
+    background: rgba(255, 255, 255, 0.25);
+    /* Blue gradient for depth */
     height: 65vh;
     width: 60px;
-    border-radius: 20px; /* Soft, rounded corners */
-    box-shadow: 
-        0 0 5px rgba(0, 123, 255, 0.5), /* Outer blue glow */
-        inset 0 0 5px rgba(255,255, 255, 0.1); /* Inner shadow for depth effect */
-    border: 0.5px solid rgba(0, 123, 255, 0.5); /* Subtle blue border */
-    position: relative; /* Needed for positioning the inner bar */
-    overflow: hidden; /* Ensures the inner bar stays within the rounded corners */
+    border-radius: 20px;
+    /* Soft, rounded corners */
+    box-shadow:
+        0 0 5px rgba(0, 123, 255, 0.5),
+        /* Outer blue glow */
+        inset 0 0 5px rgba(255, 255, 255, 0.1);
+    /* Inner shadow for depth effect */
+    border: 0.5px solid rgba(0, 123, 255, 0.5);
+    /* Subtle blue border */
+    position: relative;
+    /* Needed for positioning the inner bar */
+    overflow: hidden;
+    /* Ensures the inner bar stays within the rounded corners */
 }
 
 
 #innerDepthBar {
     /* Represents the "filled" or current depth level */
-    background: linear-gradient(to top, #0000ff, #007bff); /* Translucent black fill */
+    background: linear-gradient(to top, #0000ff, #007bff);
+    /* Translucent black fill */
     width: 100%;
     position: absolute;
-    bottom: 0; /* Aligns the fill to the bottom of the bar */
-    border-radius: 0 0 20px 20px; /* Matches the parent's bottom corners */
-    transition: height 0.3s ease-in-out; /* Smooth transition for depth changes */
+    bottom: 0;
+    /* Aligns the fill to the bottom of the bar */
+    border-radius: 0 0 20px 20px;
+    /* Matches the parent's bottom corners */
+    transition: height 0.3s ease-in-out;
+    /* Smooth transition for depth changes */
 }
 
 .control-group {
@@ -69,4 +85,17 @@ label {
 
 input[type="range"] {
     width: 150px;
+}
+
+.chartCanva{
+    color: #FFF;
+}
+
+.chartContainer {
+    height: 15vw;
+    width: 40vw;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+
 }
